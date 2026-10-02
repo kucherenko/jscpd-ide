@@ -1,0 +1,56 @@
+id = "jscpd"
+name = "jscpd"
+version = "0.1.0"
+schema_version = 1
+authors = ["Andrey Kucherenko <kucherenko.andrey@gmail.com>"]
+description = "Copy/paste detection while you type: exact, renamed, near-miss, similar and semantic clones, dead code and complexity from jscpd --lsp."
+repository = "https://github.com/kucherenko/jscpd-ide"
+
+# jscpd reads every file of the worktree itself; this list only says which
+# buffers get its diagnostics. Languages that are not installed are skipped.
+[language_servers.jscpd]
+name = "jscpd"
+languages = [
+  "JavaScript",
+  "TypeScript",
+  "TSX",
+  "Vue.js",
+  "Svelte",
+  "Astro",
+  "Python",
+  "Rust",
+  "Go",
+  "C",
+  "C++",
+  "C#",
+  "Java",
+  "Kotlin",
+  "Scala",
+  "Groovy",
+  "Swift",
+  "Objective-C",
+  "Dart",
+  "PHP",
+  "Ruby",
+  "Perl",
+  "Lua",
+  "Elixir",
+  "Erlang",
+  "Haskell",
+  "OCaml",
+  "Clojure",
+  "Elm",
+  "F#",
+  "Julia",
+  "R",
+  "Zig",
+  "Nim",
+  "Crystal",
+  "Shell Script",
+  "PowerShell",
+  "SQL",
+  "HTML",
+  "CSS",
+  "SCSS",
+  "Less",
+]

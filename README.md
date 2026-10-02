@@ -5,8 +5,10 @@ Editor extensions for [jscpd](https://jscpd.dev), the copy/paste detector. Each 
 | Editor | Folder | State |
 |---|---|---|
 | VS Code (and Cursor, VSCodium, Windsurf) | [`vscode/`](vscode) | works, first release in progress |
-| Zed | [`zed/`](zed) | planned |
+| Zed | [`zed/`](zed) | works as a dev extension, registry submission pending |
 | JetBrains IDEs | [`jetbrains/`](jetbrains) | planned |
+
+What each editor can show differs. VS Code gets the full set: four views, gutter icons per kind, a status bar item and the migration map. Zed has no extension-made panels, so there the extension is the language server (diagnostics, hover, code actions) plus a task for `jscpd --compare`. JetBrains will get its own tool window, annotator and intentions.
 
 [docs/spec.md](docs/spec.md) is the behaviour all three share: how the binary is found and downloaded, which diagnostic codes exist and what color each gets, the views, the commands and the settings.
 

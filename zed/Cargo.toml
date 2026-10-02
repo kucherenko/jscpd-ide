@@ -1,0 +1,18 @@
+[package]
+name = "zed_jscpd"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "MIT"
+description = "jscpd for Zed: clones, dead code and complexity from jscpd --lsp"
+repository = "https://github.com/kucherenko/jscpd-ide"
+
+[lib]
+path = "src/jscpd.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+zed_extension_api = "0.7.0"
+# Both pure Rust, so they build for wasm32-wasip1 like the extension itself.
+sha2 = "0.10"
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }

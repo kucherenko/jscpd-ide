@@ -89,4 +89,11 @@ with the vendored folders (`node_modules`, `target`, `vendor`, `dist`, `build`, 
 
 ## Settings
 
-The same names in every editor, under the editor's own prefix: `enable`, `path`, `download`, `version`, `analyses.clones`, `analyses.similarFunctions`, `analyses.semantic`, `analyses.deadCode`, `analyses.complexity`, `allFiles`, `clones.warningTokens`, `similarFunctions.similarity`, `complexity.functionLimit`, `settings` (raw `.jscpd.json` keys), `args`, `decorations`, `compare.ignore`, `compare.watch`.
+The same names in VS Code and JetBrains, under the editor's own prefix: `enable`, `path`, `download`, `version`, `analyses.clones`, `analyses.similarFunctions`, `analyses.semantic`, `analyses.deadCode`, `analyses.complexity`, `allFiles`, `clones.warningTokens`, `similarFunctions.similarity`, `complexity.functionLimit`, `settings` (raw `.jscpd.json` keys), `args`, `decorations`, `compare.ignore`, `compare.watch`.
+
+Zed has no settings UI for extensions, so there the analyses are the `lsp` section itself, written as `lsp.jscpd.initialization_options`, and the binary is `lsp.jscpd.binary.path` with `arguments`. A `jscpd` on the PATH older than 5.4.0 (the npm v4 package, for instance) is skipped in favour of a downloaded release.
+
+## What each editor cannot do
+
+- Zed: no panels, commands, gutter icons or status items from an extension (slash commands were removed from Zed). The views and the migration flow are not available; `--compare` runs as a task and opens its HTML map in the browser.
+- JetBrains Community IDEs: no platform LSP API, which is why the plugin carries its own client.
