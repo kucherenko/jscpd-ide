@@ -1,0 +1,386 @@
+{
+  "name": "jscpd",
+  "displayName": "jscpd",
+  "description": "Copy/paste detection in the editor: exact, renamed, near-miss, similar and semantic clones, dead code and complexity from jscpd --lsp, and a migration view for jscpd --compare.",
+  "version": "0.1.0",
+  "publisher": "kucherenko",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kucherenko/jscpd-ide.git",
+    "directory": "vscode"
+  },
+  "homepage": "https://jscpd.dev",
+  "icon": "resources/icon.png",
+  "bugs": {
+    "url": "https://github.com/kucherenko/jscpd-ide/issues"
+  },
+  "engines": {
+    "vscode": "^1.91.0"
+  },
+  "categories": [
+    "Linters",
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "duplication",
+    "copy-paste",
+    "clones",
+    "dead code",
+    "complexity",
+    "migration",
+    "lsp"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "jscpd",
+      "properties": {
+        "jscpd.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Start jscpd for the workspace."
+        },
+        "jscpd.path": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the jscpd executable. Empty: the extension looks in PATH, then uses or downloads a release build."
+        },
+        "jscpd.download": {
+          "type": "string",
+          "enum": [
+            "ask",
+            "always",
+            "never"
+          ],
+          "default": "ask",
+          "description": "What to do when jscpd is neither at `jscpd.path` nor in PATH: ask before downloading a release build, download without asking, or never download."
+        },
+        "jscpd.version": {
+          "type": "string",
+          "default": "latest",
+          "description": "The release to download: `latest` or a tag such as `v5.4.0`."
+        },
+        "jscpd.analyses.clones": {
+          "type": "boolean",
+          "default": true,
+          "description": "Report exact, renamed and near-miss copies."
+        },
+        "jscpd.analyses.similarFunctions": {
+          "type": "boolean",
+          "default": false,
+          "description": "Report JavaScript and TypeScript functions whose syntax trees have the same shape (`--similarity`)."
+        },
+        "jscpd.analyses.semantic": {
+          "type": "boolean",
+          "default": false,
+          "description": "Report functions that do the same job with different code (`--semantic`). Needs the embedding model, which jscpd offers to download."
+        },
+        "jscpd.analyses.deadCode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Report unused files, exports, symbols, imports and members (`--dead-code`)."
+        },
+        "jscpd.analyses.complexity": {
+          "type": "boolean",
+          "default": false,
+          "description": "Report functions and files above the complexity limit."
+        },
+        "jscpd.allFiles": {
+          "type": "boolean",
+          "default": false,
+          "description": "Also publish the diagnostics of closed files, so the Problems panel lists the whole project."
+        },
+        "jscpd.clones.warningTokens": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "default": null,
+          "description": "Clones of at least this many tokens are warnings, smaller ones information. Empty: every clone is a warning."
+        },
+        "jscpd.similarFunctions.similarity": {
+          "type": "number",
+          "default": 0.85,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How much of their syntax-tree shape two functions must share to count as similar."
+        },
+        "jscpd.complexity.functionLimit": {
+          "type": "number",
+          "default": 15,
+          "description": "A function above this cyclomatic complexity gets a diagnostic."
+        },
+        "jscpd.settings": {
+          "type": "object",
+          "default": {},
+          "markdownDescription": "Keys of `.jscpd.json` applied to every project on top of its own config, for example `{ \"minTokens\": 70, \"ignoreIdentifiers\": true }`."
+        },
+        "jscpd.args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Extra arguments for `jscpd --lsp`, for example `[\"--semantic-url\", \"http://localhost:11434/v1\"]`. Not `--config` or paths: the server reads each project's own `.jscpd.json`."
+        },
+        "jscpd.decorations": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show an icon in the gutter and a mark in the overview ruler for each finding, colored by kind."
+        },
+        "jscpd.compare.ignore": {
+          "type": "string",
+          "default": "**/node_modules/**,**/target/**,**/vendor/**,**/dist/**,**/build/**,**/.git/**",
+          "description": "Folders `jscpd --compare` leaves out of both sides, comma-separated globs."
+        },
+        "jscpd.compare.watch": {
+          "type": "boolean",
+          "default": true,
+          "description": "Run the last comparison again when a file in either folder is saved."
+        },
+        "jscpd.trace.server": {
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Log the messages between the extension and jscpd."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "jscpd.rescan",
+        "title": "Rescan the workspace",
+        "category": "jscpd",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "jscpd.restart",
+        "title": "Restart the language server",
+        "category": "jscpd"
+      },
+      {
+        "command": "jscpd.showOutput",
+        "title": "Show server output",
+        "category": "jscpd"
+      },
+      {
+        "command": "jscpd.downloadBinary",
+        "title": "Download or update the jscpd binary",
+        "category": "jscpd"
+      },
+      {
+        "command": "jscpd.compare",
+        "title": "Compare two folders (measure a port)",
+        "category": "jscpd",
+        "icon": "$(git-compare)"
+      },
+      {
+        "command": "jscpd.compare.rerun",
+        "title": "Run the last comparison again",
+        "category": "jscpd",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "jscpd.compare.openMap",
+        "title": "Open the migration map",
+        "category": "jscpd",
+        "icon": "$(map)"
+      },
+      {
+        "command": "jscpd.compareFolders",
+        "title": "Compare the two given folders",
+        "category": "jscpd"
+      },
+      {
+        "command": "jscpd.openLocation",
+        "title": "Open location",
+        "category": "jscpd"
+      },
+      {
+        "command": "jscpd.openPair",
+        "title": "Open both sides",
+        "category": "jscpd"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "jscpd.compareFolders",
+          "when": "false"
+        },
+        {
+          "command": "jscpd.openLocation",
+          "when": "false"
+        },
+        {
+          "command": "jscpd.openPair",
+          "when": "false"
+        },
+        {
+          "command": "jscpd.compare.rerun",
+          "when": "jscpd.hasComparison"
+        },
+        {
+          "command": "jscpd.compare.openMap",
+          "when": "jscpd.hasComparison"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "jscpd.rescan",
+          "when": "view == jscpd.clones || view == jscpd.deadCode || view == jscpd.complexity",
+          "group": "navigation"
+        },
+        {
+          "command": "jscpd.compare",
+          "when": "view == jscpd.migration",
+          "group": "navigation@1"
+        },
+        {
+          "command": "jscpd.compare.rerun",
+          "when": "view == jscpd.migration && jscpd.hasComparison",
+          "group": "navigation@2"
+        },
+        {
+          "command": "jscpd.compare.openMap",
+          "when": "view == jscpd.migration && jscpd.hasComparison",
+          "group": "navigation@3"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "jscpd",
+          "title": "jscpd",
+          "icon": "resources/jscpd-activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "jscpd": [
+        {
+          "id": "jscpd.clones",
+          "name": "Clones",
+          "contextualTitle": "jscpd"
+        },
+        {
+          "id": "jscpd.deadCode",
+          "name": "Dead code",
+          "contextualTitle": "jscpd",
+          "when": "config.jscpd.analyses.deadCode"
+        },
+        {
+          "id": "jscpd.complexity",
+          "name": "Complexity",
+          "contextualTitle": "jscpd",
+          "when": "config.jscpd.analyses.complexity"
+        },
+        {
+          "id": "jscpd.migration",
+          "name": "Migration",
+          "contextualTitle": "jscpd"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "jscpd.clones",
+        "contents": "jscpd is not running.\n[Download jscpd](command:jscpd.downloadBinary)\nOr set the path to an installed binary in the settings.",
+        "when": "jscpd.serverState == 'missing'"
+      },
+      {
+        "view": "jscpd.clones",
+        "contents": "No clones in the open projects.",
+        "when": "jscpd.serverState == 'running' && jscpd.cloneCount == 0"
+      },
+      {
+        "view": "jscpd.migration",
+        "contents": "Measure a port: pick the folder you port from and the folder you port to, and jscpd pairs their functions.\n[Compare two folders](command:jscpd.compare)",
+        "when": "!jscpd.hasComparison"
+      }
+    ],
+    "colors": [
+      {
+        "id": "jscpd.exact",
+        "description": "Exact copies",
+        "defaults": {
+          "dark": "#eb6834",
+          "light": "#c4521f",
+          "highContrast": "#ff7f4d",
+          "highContrastLight": "#a33f10"
+        }
+      },
+      {
+        "id": "jscpd.renamed",
+        "description": "Renamed copies",
+        "defaults": {
+          "dark": "#eda100",
+          "light": "#b47a00",
+          "highContrast": "#ffb81f",
+          "highContrastLight": "#8a5e00"
+        }
+      },
+      {
+        "id": "jscpd.similar",
+        "description": "Near-miss copies and similar functions",
+        "defaults": {
+          "dark": "#3987e5",
+          "light": "#2a78d6",
+          "highContrast": "#5aa0ff",
+          "highContrastLight": "#1e5fb0"
+        }
+      },
+      {
+        "id": "jscpd.semantic",
+        "description": "Semantic clones",
+        "defaults": {
+          "dark": "#9085e9",
+          "light": "#4a3aa7",
+          "highContrast": "#a99cff",
+          "highContrastLight": "#3a2c8a"
+        }
+      },
+      {
+        "id": "jscpd.complexity",
+        "description": "Functions and files over the complexity limit",
+        "defaults": {
+          "dark": "#d55181",
+          "light": "#b23b6b",
+          "highContrast": "#ff6fa0",
+          "highContrastLight": "#8f2b55"
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "check": "tsc --noEmit",
+    "test": "npm run build && tsc -p tsconfig.test.json && node ./out/test/runTest.js",
+    "package": "npm run check && npm run build && vsce package --no-dependencies",
+    "vscode:prepublish": "npm run build -- --production"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^10.1.2"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^20.19.0",
+    "@types/vscode": "^1.91.0",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^4.0.0",
+    "esbuild": "^0.28.2",
+    "mocha": "^11.7.0",
+    "typescript": "^5.9.3"
+  }
+}

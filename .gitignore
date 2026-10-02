@@ -1,0 +1,12 @@
+node_modules/
+dist/
+out/
+*.vsix
+.DS_Store
+*.log
+.vscode-test/
+target/
+build/
+.gradle/
+.idea/
+*.iml

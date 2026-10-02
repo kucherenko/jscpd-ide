@@ -1,0 +1,81 @@
+name: vscode
+
+on:
+  push:
+    branches: [master]
+    paths: ['vscode/**', 'fixtures/**', '.github/workflows/vscode.yml']
+    tags: ['vscode-v*']
+  pull_request:
+    paths: ['vscode/**', 'fixtures/**', '.github/workflows/vscode.yml']
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: vscode
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: vscode/package-lock.json
+      - name: Install jscpd
+        shell: bash
+        run: npm install -g jscpd@latest && jscpd --version
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+      - name: Test (Linux needs a display)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm test
+      - name: Test
+        if: runner.os != 'Linux'
+        run: npm test
+
+  package:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: vscode/package-lock.json
+      - run: npm ci
+      - run: npm run package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jscpd-vsix
+          path: vscode/*.vsix
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/vscode-v')
+    needs: package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: vscode/package-lock.json
+      - run: npm ci
+      - name: Publish to the Marketplace
+        run: npx vsce publish --no-dependencies
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      - name: Publish to Open VSX
+        run: npx ovsx publish --no-dependencies
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
