@@ -1,0 +1,58 @@
+<idea-plugin>
+    <id>dev.jscpd.ide</id>
+    <name>jscpd</name>
+    <vendor url="https://jscpd.dev">Andrey Kucherenko</vendor>
+    <description><![CDATA[
+Copy/paste detection while you type. The plugin runs <a href="https://jscpd.dev">jscpd</a> as a language server, so every clone, dead symbol or over-complex function shows up as a highlight in the file you are editing, with a gutter icon colored by kind, an intention that jumps to the other copy, and a tool window with the clones of the whole project.
+<ul>
+<li>Exact copies, renamed copies, near-miss copies, functions with the same syntax-tree shape, and semantic clones.</li>
+<li>Dead code (unused files, exports, symbols, imports, members) and complexity, when turned on.</li>
+<li>A migration view for <code>jscpd --compare</code>: pick the folder you port from and the folder you port to, and jscpd pairs their functions.</li>
+</ul>
+The plugin looks for <code>jscpd</code> 5.4.0 or newer in PATH and offers to download the release build when it is missing.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationConfigurable parentId="tools" id="dev.jscpd.ide.settings"
+                                 displayName="jscpd"
+                                 instance="dev.jscpd.ide.settings.JscpdConfigurable"/>
+        <postStartupActivity implementation="dev.jscpd.ide.JscpdStartup"/>
+        <externalAnnotator language="any" implementationClass="dev.jscpd.ide.JscpdAnnotator"/>
+        <toolWindow id="jscpd" anchor="bottom" icon="/icons/toolwindow.svg"
+                    factoryClass="dev.jscpd.ide.ui.JscpdToolWindowFactory"/>
+        <statusBarWidgetFactory id="jscpd" implementation="dev.jscpd.ide.ui.JscpdStatusBarWidgetFactory"/>
+        <notificationGroup id="jscpd" displayType="BALLOON"/>
+    </extensions>
+
+    <actions>
+        <group id="jscpd.Menu" text="jscpd" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <action id="jscpd.Rescan" class="dev.jscpd.ide.actions.RescanAction" text="Rescan the Project"
+                    description="Ask jscpd to read the project again" icon="AllIcons.Actions.Refresh"/>
+            <action id="jscpd.Restart" class="dev.jscpd.ide.actions.RestartAction" text="Restart the Language Server"
+                    description="Stop and start jscpd again"/>
+            <action id="jscpd.Compare" class="dev.jscpd.ide.actions.CompareAction" text="Compare Two Folders (Measure a Port)"
+                    description="Run jscpd --compare on the folder you port from and the folder you port to" icon="AllIcons.Actions.Diff"/>
+            <action id="jscpd.CompareRerun" class="dev.jscpd.ide.actions.CompareRerunAction" text="Run the Last Comparison Again"
+                    icon="AllIcons.Actions.Rerun"/>
+            <action id="jscpd.OpenMap" class="dev.jscpd.ide.actions.OpenMapAction" text="Open the Migration Map"
+                    description="The HTML map of the last comparison" icon="AllIcons.Actions.PreviewDetails"/>
+            <action id="jscpd.Download" class="dev.jscpd.ide.actions.DownloadBinaryAction" text="Download or Update the jscpd Binary"
+                    icon="AllIcons.Actions.Download"/>
+            <action id="jscpd.Settings" class="dev.jscpd.ide.actions.OpenSettingsAction" text="Settings…"
+                    icon="AllIcons.General.Settings"/>
+        </group>
+        <group id="jscpd.FindingsToolbar">
+            <reference ref="jscpd.Rescan"/>
+            <reference ref="jscpd.Restart"/>
+            <reference ref="jscpd.Settings"/>
+        </group>
+        <group id="jscpd.MigrationToolbar">
+            <reference ref="jscpd.Compare"/>
+            <reference ref="jscpd.CompareRerun"/>
+            <reference ref="jscpd.OpenMap"/>
+        </group>
+    </actions>
+</idea-plugin>

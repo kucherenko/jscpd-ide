@@ -1,0 +1,29 @@
+name: zed
+
+on:
+  push:
+    branches: [master]
+    paths: ['zed/**', '.github/workflows/zed.yml']
+  pull_request:
+    paths: ['zed/**', '.github/workflows/zed.yml']
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: zed
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: zed
+      - run: cargo build --release --target wasm32-wasip1
+      - run: cargo clippy --target wasm32-wasip1 -- -D warnings
