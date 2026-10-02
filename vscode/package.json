@@ -68,27 +68,27 @@
         "jscpd.analyses.clones": {
           "type": "boolean",
           "default": true,
-          "description": "Report exact, renamed and near-miss copies."
+          "description": "Report exact, renamed and near-miss copies. On by default in the server; off switches them off for every project."
         },
         "jscpd.analyses.similarFunctions": {
           "type": "boolean",
           "default": false,
-          "description": "Report JavaScript and TypeScript functions whose syntax trees have the same shape (`--similarity`)."
+          "description": "Report JavaScript and TypeScript functions whose syntax trees have the same shape (`--similarity`). Off: whatever the project's .jscpd.json says."
         },
         "jscpd.analyses.semantic": {
           "type": "boolean",
           "default": false,
-          "description": "Report functions that do the same job with different code (`--semantic`). Needs the embedding model, which jscpd offers to download."
+          "description": "Report functions that do the same job with different code (`--semantic`). Needs the embedding model, which jscpd offers to download. Off: whatever the project's .jscpd.json says."
         },
         "jscpd.analyses.deadCode": {
           "type": "boolean",
           "default": false,
-          "description": "Report unused files, exports, symbols, imports and members (`--dead-code`)."
+          "description": "Report unused files, exports, symbols, imports and members (`--dead-code`). Off: whatever the project's .jscpd.json says."
         },
         "jscpd.analyses.complexity": {
           "type": "boolean",
           "default": false,
-          "description": "Report functions and files above the complexity limit."
+          "description": "Report functions and files above the complexity limit. Off: whatever the project's .jscpd.json says."
         },
         "jscpd.allFiles": {
           "type": "boolean",
@@ -101,19 +101,19 @@
             "null"
           ],
           "default": null,
-          "description": "Clones of at least this many tokens are warnings, smaller ones information. Empty: every clone is a warning."
+          "description": "Clones of at least this many tokens are warnings, smaller ones information. Empty: as the project's .jscpd.json says, else every clone is a warning."
         },
         "jscpd.similarFunctions.similarity": {
           "type": "number",
           "default": 0.85,
           "minimum": 0,
           "maximum": 1,
-          "description": "How much of their syntax-tree shape two functions must share to count as similar."
+          "description": "How much of their syntax-tree shape two functions must share to count as similar. At 0.85 the project's own value applies."
         },
         "jscpd.complexity.functionLimit": {
           "type": "number",
           "default": 15,
-          "description": "A function above this cyclomatic complexity gets a diagnostic."
+          "description": "A function above this cyclomatic complexity gets a diagnostic. At 15 the project's own value applies."
         },
         "jscpd.settings": {
           "type": "object",
@@ -276,14 +276,12 @@
         {
           "id": "jscpd.deadCode",
           "name": "Dead code",
-          "contextualTitle": "jscpd",
-          "when": "config.jscpd.analyses.deadCode"
+          "contextualTitle": "jscpd"
         },
         {
           "id": "jscpd.complexity",
           "name": "Complexity",
-          "contextualTitle": "jscpd",
-          "when": "config.jscpd.analyses.complexity"
+          "contextualTitle": "jscpd"
         },
         {
           "id": "jscpd.migration",
@@ -307,6 +305,16 @@
         "view": "jscpd.migration",
         "contents": "Measure a port: pick the folder you port from and the folder you port to, and jscpd pairs their functions.\n[Compare two folders](command:jscpd.compare)",
         "when": "!jscpd.hasComparison"
+      },
+      {
+        "view": "jscpd.deadCode",
+        "contents": "No dead code reported. Turn the analysis on with `jscpd.analyses.deadCode` or in the project's `.jscpd.json`.",
+        "when": "jscpd.serverState == 'running' && !jscpd.hasDeadCode"
+      },
+      {
+        "view": "jscpd.complexity",
+        "contents": "Nothing over the complexity limit. Turn the analysis on with `jscpd.analyses.complexity` or in the project's `.jscpd.json`.",
+        "when": "jscpd.serverState == 'running' && !jscpd.hasComplexity"
       }
     ],
     "colors": [

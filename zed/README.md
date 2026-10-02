@@ -52,7 +52,7 @@ The analyses are the `lsp` section of `.jscpd.json`, which you can also pass per
 }
 ```
 
-A project's own `.jscpd.json` is read by the server; its `lsp` section switches the analyses for that project.
+A project's own `.jscpd.json` is read by the server; its `lsp` section switches the analyses for that project. The values above are merged on top of it, so write only what you want to override: an explicit `"enabled": false` switches an analysis off even where the project turns it on.
 
 To keep jscpd out of a language, set `language_servers` for it:
 

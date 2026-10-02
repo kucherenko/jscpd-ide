@@ -27,10 +27,10 @@ jscpd 5.4.0 or newer is needed for the language server.
 | `jscpd.download` | `ask` | `ask`, `always` or `never` download a release when nothing is installed. |
 | `jscpd.version` | `latest` | The release to download, `latest` or a tag. |
 | `jscpd.analyses.clones` | `true` | Exact, renamed and near-miss copies. |
-| `jscpd.analyses.similarFunctions` | `false` | Functions with the same syntax-tree shape (JavaScript, TypeScript). |
-| `jscpd.analyses.semantic` | `false` | Semantic clones through the embedding model. |
-| `jscpd.analyses.deadCode` | `false` | Unused files, exports, symbols, imports and members. |
-| `jscpd.analyses.complexity` | `false` | Functions and files over the complexity limit. |
+| `jscpd.analyses.similarFunctions` | `false` | Functions with the same syntax-tree shape (JavaScript, TypeScript). Off: as the project says. |
+| `jscpd.analyses.semantic` | `false` | Semantic clones through the embedding model. Off: as the project says. |
+| `jscpd.analyses.deadCode` | `false` | Unused files, exports, symbols, imports and members. Off: as the project says. |
+| `jscpd.analyses.complexity` | `false` | Functions and files over the complexity limit. Off: as the project says. |
 | `jscpd.allFiles` | `false` | Publish diagnostics for closed files too, so the Problems panel lists the whole project. |
 | `jscpd.clones.warningTokens` | `null` | Clones of at least this many tokens are warnings, smaller ones information. |
 | `jscpd.similarFunctions.similarity` | `0.85` | How much shape two functions must share. |
@@ -42,7 +42,7 @@ jscpd 5.4.0 or newer is needed for the language server.
 | `jscpd.compare.watch` | `true` | Run the last comparison again on save. |
 | `jscpd.trace.server` | `off` | Log the LSP traffic. |
 
-Each project keeps its own `.jscpd.json`; the server reads it, and the `lsp` section of that file sets the same analyses per project. The settings above apply to all open projects.
+Each project keeps its own `.jscpd.json`; the server reads it, and the `lsp` section of that file sets the same analyses per project. The settings above are merged on top for all open projects, and only what you switch is sent: an analysis left off in the editor runs when the project turns it on, and values at their defaults leave the project's own in place.
 
 ## Commands
 

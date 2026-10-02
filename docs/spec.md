@@ -19,20 +19,22 @@ jscpd 5.4.0 is the oldest release with `--lsp`.
 
 Started as `jscpd --lsp` plus the user's extra arguments, over stdio, one server per editor window with every workspace folder as a root. The server reads each project's `.jscpd.json` itself, so the extension never passes `--config` or paths.
 
-Initialization options and `workspace/didChangeConfiguration` carry the keys of `.jscpd.json`. The editor's own toggles map to the `lsp` section:
+Initialization options and `workspace/didChangeConfiguration` carry the keys of `.jscpd.json`. The server reads each project's own `.jscpd.json` and merges the editor's values on top, so an explicit `false` from the editor switches off what the project turned on. The extensions therefore send only what the user switched: an analysis turned on in the editor is sent as `enabled: true`, clones turned off as `enabled: false`, and everything else is left out so the project's config decides. Values at their defaults (similarity 0.85, function limit 15, no warning threshold) are left out for the same reason. With every toggle on, the section looks like this:
 
 ```json
 {
   "lsp": {
-    "clones":     { "enabled": true,  "warningTokens": null },
-    "ast":        { "enabled": false, "similarity": 0.85 },
-    "semantic":   { "enabled": false },
-    "deadCode":   { "enabled": false },
-    "complexity": { "enabled": false, "functionLimit": 15 },
-    "allFiles":   false
+    "clones":     { "warningTokens": 100 },
+    "ast":        { "enabled": true, "similarity": 0.9 },
+    "semantic":   { "enabled": true },
+    "deadCode":   { "enabled": true },
+    "complexity": { "enabled": true, "functionLimit": 20 },
+    "allFiles":   true
   }
 }
 ```
+
+The views ask for every report whatever the editor's toggles say, because the server answers only for the projects that run an analysis.
 
 Diagnostics come with `source: "jscpd"` and these codes:
 

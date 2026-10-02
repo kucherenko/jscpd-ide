@@ -36,6 +36,7 @@ class JscpdConfigurable : BoundConfigurable("jscpd") {
                 .comment("latest, or a tag such as v5.4.0")
         }
         group("Analyses") {
+            row { comment("An analysis left off here runs when the project's own .jscpd.json turns it on. Values at their defaults leave the project's own in place.") }
             row { checkBox("Clones: exact, renamed and near-miss copies").bindSelected(state::clones) }
             row { checkBox("Similar functions: the same syntax-tree shape (JavaScript, TypeScript)").bindSelected(state::similarFunctions) }
             row { checkBox("Semantic clones: the same job in different code (needs the embedding model)").bindSelected(state::semantic) }

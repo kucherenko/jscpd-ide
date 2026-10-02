@@ -158,8 +158,8 @@ class ReportPanel(project: Project, title: String, toolbarGroupId: String, paren
             JscpdServer.State.STARTING -> "jscpd is starting"
             JscpdServer.State.STOPPED -> "jscpd is not running"
             JscpdServer.State.RUNNING -> when (title) {
-                "Dead code" -> "No dead code found. Turn the analysis on in Settings | Tools | jscpd if it is off."
-                "Complexity" -> "Nothing over the complexity limit. Turn the analysis on in Settings | Tools | jscpd if it is off."
+                "Dead code" -> "No dead code reported. Turn the analysis on in Settings | Tools | jscpd or in the project's .jscpd.json."
+                "Complexity" -> "Nothing over the complexity limit. Turn the analysis on in Settings | Tools | jscpd or in the project's .jscpd.json."
                 else -> "No clones in the open projects"
             }
         }

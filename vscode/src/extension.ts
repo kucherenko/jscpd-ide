@@ -77,14 +77,8 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<JscpdApi> 
     }),
   );
 
-  let refreshTimer: NodeJS.Timeout | undefined;
   ctx.subscriptions.push(
-    vscode.languages.onDidChangeDiagnostics(() => {
-      if (refreshTimer) {
-        clearTimeout(refreshTimer);
-      }
-      refreshTimer = setTimeout(() => void refresh(), 700);
-    }),
+    vscode.languages.onDidChangeDiagnostics(() => scheduleRefresh()),
     vscode.workspace.onDidChangeConfiguration(async (e) => {
       if (!e.affectsConfiguration('jscpd')) {
         return;
@@ -165,7 +159,7 @@ async function start(ctx: vscode.ExtensionContext): Promise<void> {
     return;
   }
   log.appendLine(`using jscpd ${binary.version} at ${binary.command} (${binary.source})`);
-  client = createClient(binary.command, cfg.get<string[]>('args', []), log, trace);
+  client = createClient(binary.command, cfg.get<string[]>('args', []), log, trace, () => scheduleRefresh());
   client.onDidChangeState((e) => {
     if (e.newState === State.Stopped && state === 'running') {
       void setState('failed', 'jscpd stopped. Click for the output.');
@@ -195,34 +189,49 @@ async function restart(ctx: vscode.ExtensionContext): Promise<void> {
   await start(ctx);
 }
 
+let refreshTimer: NodeJS.Timeout | undefined;
+
+/** A refresh soon, with bursts of changes folded into one. */
+function scheduleRefresh(): void {
+  if (refreshTimer) {
+    clearTimeout(refreshTimer);
+  }
+  refreshTimer = setTimeout(() => void refresh(), 700);
+}
+
 /** Asks the server for its reports and fills the views and the status bar. */
 async function refresh(): Promise<void> {
   if (!client || client.state !== State.Running) {
     return;
   }
-  const cfg = vscode.workspace.getConfiguration('jscpd');
   try {
     const [clones, statistics] = await Promise.all([
       client.sendRequest<Report<ClonesProject>>('jscpd/clones'),
       client.sendRequest<Report<StatisticsProject>>('jscpd/statistics'),
     ]);
-    const semantic = cfg.get<boolean>('analyses.semantic', false) ? await client.sendRequest<Report<SemanticProject>>('jscpd/semantic') : undefined;
+    // Every report is asked for: a project's own .jscpd.json may turn an
+    // analysis on that the editor's settings leave alone, and the server
+    // answers only for projects that run it.
+    const [semantic, deadCodeReport, complexityReport] = await Promise.all([
+      client.sendRequest<Report<SemanticProject>>('jscpd/semantic'),
+      client.sendRequest<Report<DeadCodeProject>>('jscpd/deadCode'),
+      client.sendRequest<Report<ComplexityProject>>('jscpd/complexity'),
+    ]);
     const clonesTreeData = buildClonesTree(clones, semantic);
     clonesView.setRoots(clonesTreeData.roots);
     clonesTree.badge = clonesTreeData.count ? { value: clonesTreeData.count, tooltip: `${clonesTreeData.count} clones` } : undefined;
     await vscode.commands.executeCommand('setContext', 'jscpd.cloneCount', clonesTreeData.count);
     status.setStatistics(statistics, binary?.version);
 
-    if (cfg.get<boolean>('analyses.deadCode', false)) {
-      const dead = buildDeadCodeTree(await client.sendRequest<Report<DeadCodeProject>>('jscpd/deadCode'));
-      deadCodeView.setRoots(dead.roots);
-      deadCodeTree.badge = dead.count ? { value: dead.count, tooltip: `${dead.count} dead code findings` } : undefined;
-    }
-    if (cfg.get<boolean>('analyses.complexity', false)) {
-      const cx = buildComplexityTree(await client.sendRequest<Report<ComplexityProject>>('jscpd/complexity'));
-      complexityView.setRoots(cx.roots);
-      complexityTree.badge = cx.count ? { value: cx.count, tooltip: `${cx.count} files over the complexity bar` } : undefined;
-    }
+    const dead = buildDeadCodeTree(deadCodeReport);
+    deadCodeView.setRoots(dead.roots);
+    deadCodeTree.badge = dead.count ? { value: dead.count, tooltip: `${dead.count} dead code findings` } : undefined;
+    await vscode.commands.executeCommand('setContext', 'jscpd.hasDeadCode', dead.count > 0);
+
+    const cx = buildComplexityTree(complexityReport);
+    complexityView.setRoots(cx.roots);
+    complexityTree.badge = cx.count ? { value: cx.count, tooltip: `${cx.count} files over the complexity bar` } : undefined;
+    await vscode.commands.executeCommand('setContext', 'jscpd.hasComplexity', cx.roots.length > 0);
   } catch (error) {
     log.appendLine(`refresh failed: ${error instanceof Error ? error.message : String(error)}`);
   }

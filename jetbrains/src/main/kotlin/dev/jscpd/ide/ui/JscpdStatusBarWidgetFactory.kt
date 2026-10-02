@@ -1,14 +1,20 @@
 package dev.jscpd.ide.ui
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.wm.CustomStatusBarWidget
 import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.util.Consumer
+import com.intellij.ui.components.JBLabel
+import com.intellij.util.ui.JBUI
 import dev.jscpd.ide.lsp.JscpdServer
-import java.awt.Component
+import java.awt.Cursor
+import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.util.Locale
+import javax.swing.JComponent
 
 /** "jscpd 10.5%" in the status bar: the duplication of the open projects, or why jscpd is not running. */
 class JscpdStatusBarWidgetFactory : StatusBarWidgetFactory {
@@ -23,48 +29,55 @@ class JscpdStatusBarWidgetFactory : StatusBarWidgetFactory {
     }
 }
 
-class JscpdStatusBarWidget(private val project: Project) : StatusBarWidget, StatusBarWidget.TextPresentation {
-    private var statusBar: StatusBar? = null
-    @Volatile private var text = "jscpd"
-    @Volatile private var tooltip = "jscpd"
+/** A label of its own, so the text can grow from "jscpd" to "jscpd 10.5%" without being cut. */
+class JscpdStatusBarWidget(private val project: Project) : CustomStatusBarWidget {
+    private val label = JBLabel("jscpd").apply {
+        border = JBUI.Borders.empty(0, 6)
+        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+        addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                ToolWindowManager.getInstance(project).getToolWindow("jscpd")?.activate(null)
+            }
+        })
+    }
 
-    override fun ID(): String = JscpdStatusBarWidgetFactory.ID
-
-    override fun install(statusBar: StatusBar) {
-        this.statusBar = statusBar
+    init {
+        // Listeners go on from creation: a widget restored from a saved layout may not get `install`.
         val server = JscpdServer.getInstance(project)
         server.addStateListener({ update() }, this)
         server.addReportListener({ update() }, this)
         update()
     }
 
-    override fun dispose() {
-        statusBar = null
+    override fun ID(): String = JscpdStatusBarWidgetFactory.ID
+    override fun getComponent(): JComponent = label
+    override fun install(statusBar: StatusBar) {
+        update()
     }
 
-    override fun getPresentation(): StatusBarWidget.WidgetPresentation = this
-    override fun getText(): String = text
-    override fun getAlignment(): Float = Component.CENTER_ALIGNMENT
-    override fun getTooltipText(): String = tooltip
-    override fun getClickConsumer(): Consumer<MouseEvent> = Consumer {
-        ToolWindowManager.getInstance(project).getToolWindow("jscpd")?.activate(null)
-    }
+    override fun dispose() {}
 
     private fun update() {
         val server = JscpdServer.getInstance(project)
-        when (server.state) {
+        val (text, tooltip) = when (server.state) {
             JscpdServer.State.RUNNING -> {
                 val summary = Reports.summary(server.statistics)
                 val progress = server.progress
-                text = if (progress != null) "jscpd: $progress" else "jscpd %.1f%%".format(java.util.Locale.ROOT, summary.percentage)
-                tooltip = "jscpd ${server.binary?.version ?: ""}: ${summary.files} files, ${summary.clones} clones, ${summary.duplicatedLines} of ${summary.lines} lines duplicated"
+                val text = if (progress != null) "jscpd: $progress" else "jscpd %.1f%%".format(Locale.ROOT, summary.percentage)
+                text to "jscpd ${server.binary?.version ?: ""}: ${summary.files} files, ${summary.clones} clones, ${summary.duplicatedLines} of ${summary.lines} lines duplicated"
             }
-            JscpdServer.State.STARTING -> { text = "jscpd…"; tooltip = "jscpd is starting" }
-            JscpdServer.State.MISSING -> { text = "jscpd: not installed"; tooltip = "Tools | jscpd | Download or Update the jscpd Binary" }
-            JscpdServer.State.FAILED -> { text = "jscpd: failed"; tooltip = server.detail }
-            JscpdServer.State.DISABLED -> { text = "jscpd: off"; tooltip = "jscpd is off in Settings | Tools | jscpd" }
-            JscpdServer.State.STOPPED -> { text = "jscpd"; tooltip = "jscpd is not running" }
+            JscpdServer.State.STARTING -> "jscpd…" to "jscpd is starting"
+            JscpdServer.State.MISSING -> "jscpd: not installed" to "Tools | jscpd | Download or Update the jscpd Binary"
+            JscpdServer.State.FAILED -> "jscpd: failed" to server.detail
+            JscpdServer.State.DISABLED -> "jscpd: off" to "jscpd is off in Settings | Tools | jscpd"
+            JscpdServer.State.STOPPED -> "jscpd" to "jscpd is not running"
         }
-        statusBar?.updateWidget(ID())
+        ApplicationManager.getApplication().invokeLater({
+            if (project.isDisposed) return@invokeLater
+            label.text = text
+            label.toolTipText = tooltip
+            label.revalidate()
+            label.repaint()
+        }, project.disposed)
     }
 }

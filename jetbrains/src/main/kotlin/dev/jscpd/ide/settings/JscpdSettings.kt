@@ -45,7 +45,13 @@ class JscpdSettings : SimplePersistentStateComponent<JscpdSettings.State>(State(
         var compareWatch by property(true)
     }
 
-    /** The editor's settings as the server takes them: the keys of `.jscpd.json` with the `lsp` section. */
+    /**
+     * The editor's settings as the server takes them: the keys of `.jscpd.json`
+     * with the `lsp` section. The server merges these over each project's own
+     * `.jscpd.json`, so only what the user switched is sent: an analysis left
+     * off here keeps whatever the project says, and a value at its default
+     * does not override the project's own.
+     */
     fun serverSettings(): JsonObject {
         val s = state
         val base = try {
@@ -53,23 +59,17 @@ class JscpdSettings : SimplePersistentStateComponent<JscpdSettings.State>(State(
         } catch (_: Exception) {
             JsonObject()
         }
-        val lsp = JsonObject()
-        lsp.add("clones", JsonObject().apply {
-            addProperty("enabled", s.clones)
-            if (s.warningTokens > 0) addProperty("warningTokens", s.warningTokens)
-        })
-        lsp.add("ast", JsonObject().apply {
-            addProperty("enabled", s.similarFunctions)
-            addProperty("similarity", s.similarity / 100.0)
-        })
-        lsp.add("semantic", JsonObject().apply { addProperty("enabled", s.semantic) })
-        lsp.add("deadCode", JsonObject().apply { addProperty("enabled", s.deadCode) })
-        lsp.add("complexity", JsonObject().apply {
-            addProperty("enabled", s.complexity)
-            addProperty("functionLimit", s.functionLimit)
-        })
-        lsp.addProperty("allFiles", s.allFiles)
-        base.add("lsp", lsp)
+        val lsp = base.get("lsp")?.takeIf { it.isJsonObject }?.asJsonObject ?: JsonObject().also { base.add("lsp", it) }
+        fun section(name: String): JsonObject = lsp.get(name)?.takeIf { it.isJsonObject }?.asJsonObject ?: JsonObject().also { lsp.add(name, it) }
+        if (!s.clones) section("clones").addProperty("enabled", false)
+        if (s.warningTokens > 0) section("clones").addProperty("warningTokens", s.warningTokens)
+        if (s.similarFunctions) section("ast").addProperty("enabled", true)
+        if (s.similarity != 85) section("ast").addProperty("similarity", s.similarity / 100.0)
+        if (s.semantic) section("semantic").addProperty("enabled", true)
+        if (s.deadCode) section("deadCode").addProperty("enabled", true)
+        if (s.complexity) section("complexity").addProperty("enabled", true)
+        if (s.functionLimit != 15) section("complexity").addProperty("functionLimit", s.functionLimit)
+        if (s.allFiles) lsp.addProperty("allFiles", true)
         return base
     }
 

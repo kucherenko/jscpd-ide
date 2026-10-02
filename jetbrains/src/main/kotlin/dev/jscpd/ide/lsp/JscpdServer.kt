@@ -545,7 +545,11 @@ class JscpdServer(private val project: Project) : Disposable {
         progress = when (val n = value.left) {
             is WorkDoneProgressBegin -> n.title
             is WorkDoneProgressReport -> n.message ?: progress
-            is WorkDoneProgressEnd -> null
+            is WorkDoneProgressEnd -> {
+                // An analysis finished; its findings may be in files that are not open.
+                scheduleReports()
+                null
+            }
             else -> progress
         }
         stateListeners.forEach { it.changed() }
@@ -595,14 +599,14 @@ class JscpdServer(private val project: Project) : Disposable {
         }
     }
 
+    /** Every report is asked for: a project's own config may run an analysis the editor's settings leave alone. */
     private fun fetchReports() {
         if (state != State.RUNNING) return
-        val settings = JscpdSettings.get().state
         clones = request { it.clones() }
         statistics = request { it.statistics() }
-        semantic = if (settings.semantic) request { it.semantic() } else null
-        deadCode = if (settings.deadCode) request { it.deadCode() } else null
-        complexity = if (settings.complexity) request { it.complexity() } else null
+        semantic = request { it.semantic() }
+        deadCode = request { it.deadCode() }
+        complexity = request { it.complexity() }
         reportListeners.forEach { it.changed() }
     }
 
