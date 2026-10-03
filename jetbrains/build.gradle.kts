@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.jscpd"
-version = "0.1.0"
+version = "0.1.1"
 
 repositories {
     mavenCentral()
@@ -66,7 +66,8 @@ tasks {
     runIde {
         // Opens the lsp-demo fixture with loans.js and the tool window in view, the trust dialog answered.
         args = listOf(rootProject.file("../fixtures/lsp-demo").absolutePath)
-        jvmArgs("-Didea.trust.all.projects=true", "-Djscpd.ide.demo=true", "-Didea.log.debug.categories=dev.jscpd.ide")
+        // The sandbox IDE reports its own startup errors in a balloon; keep it quiet in the demo.
+        jvmArgs("-Didea.trust.all.projects=true", "-Djscpd.ide.demo=true", "-Didea.log.debug.categories=dev.jscpd.ide", "-Didea.fatal.error.notification=disabled")
         // JSCPD_DEMO_TAB=Migration JSCPD_DEMO_COMPARE=true ./gradlew runIde shows the compare-demo pairs.
         System.getenv("JSCPD_DEMO_TAB")?.let { jvmArgs("-Djscpd.ide.demo.tab=$it") }
         if (System.getenv("JSCPD_DEMO_COMPARE") == "true") jvmArgs("-Djscpd.ide.demo.compare=true")

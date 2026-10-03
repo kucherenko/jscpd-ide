@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Highlights and gutter icons show up: the annotator was registered under a language key the platform does not read, so 0.1.0 reported findings in the tool window only.
+- Opening a finding from the tool window no longer refreshes the file system on the UI thread.
+
 ## 0.1.0
 
 First release.
