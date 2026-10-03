@@ -19,7 +19,8 @@ The plugin looks for <code>jscpd</code> 5.4.0 or newer in PATH and offers to dow
                                  displayName="jscpd"
                                  instance="dev.jscpd.ide.settings.JscpdConfigurable"/>
         <postStartupActivity implementation="dev.jscpd.ide.JscpdStartup"/>
-        <externalAnnotator language="any" implementationClass="dev.jscpd.ide.JscpdAnnotator"/>
+        <!-- An empty language is Language.ANY: the annotator runs for every file. -->
+        <externalAnnotator language="" implementationClass="dev.jscpd.ide.JscpdAnnotator"/>
         <toolWindow id="jscpd" anchor="bottom" icon="/icons/toolwindow.svg"
                     factoryClass="dev.jscpd.ide.ui.JscpdToolWindowFactory"/>
         <statusBarWidgetFactory id="jscpd" implementation="dev.jscpd.ide.ui.JscpdStatusBarWidgetFactory"/>

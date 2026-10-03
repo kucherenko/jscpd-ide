@@ -12,6 +12,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.debug
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.EditorFactory
@@ -483,6 +484,7 @@ class JscpdServer(private val project: Project) : Disposable {
 
     fun onDiagnostics(uri: String, list: List<Diagnostic>) {
         if (list.isEmpty()) diagnostics.remove(uri) else diagnostics[uri] = list
+        LOG.debug { "${list.size} diagnostics for $uri" }
         scheduleReports()
         val path = Uris.toPath(uri) ?: return
         ApplicationManager.getApplication().invokeLater({

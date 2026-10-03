@@ -1,6 +1,7 @@
 package dev.jscpd.ide.lsp
 
 import com.google.gson.JsonElement
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
@@ -51,6 +52,10 @@ object Uris {
     fun toFile(uri: String): VirtualFile? =
         toPath(uri)?.let { LocalFileSystem.getInstance().findFileByPath(FileUtil.toSystemIndependentName(it)) }
 
-    fun fileOf(path: String): VirtualFile? =
-        LocalFileSystem.getInstance().refreshAndFindFileByPath(FileUtil.toSystemIndependentName(path))
+    /** The known file first; a refresh only for one the VFS has not seen, which is slow and must stay off the EDT. */
+    fun fileOf(path: String): VirtualFile? {
+        val independent = FileUtil.toSystemIndependentName(path)
+        val fs = LocalFileSystem.getInstance()
+        return fs.findFileByPath(independent) ?: if (ApplicationManager.getApplication().isDispatchThread) null else fs.refreshAndFindFileByPath(independent)
+    }
 }

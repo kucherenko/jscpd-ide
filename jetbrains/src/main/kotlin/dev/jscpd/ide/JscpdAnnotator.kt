@@ -8,6 +8,8 @@ import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.diagnostic.debug
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.markup.GutterIconRenderer
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -36,6 +38,10 @@ class JscpdAnnotator : ExternalAnnotator<PsiFile, List<JscpdAnnotator.Finding>>(
 
     class Finding(val diagnostic: Diagnostic, val actions: List<Either<Command, CodeAction>>)
 
+    private companion object {
+        val LOG = logger<JscpdAnnotator>()
+    }
+
     override fun collectInformation(file: PsiFile): PsiFile? =
         file.takeIf { it.virtualFile?.isInLocalFileSystem == true }
 
@@ -44,6 +50,7 @@ class JscpdAnnotator : ExternalAnnotator<PsiFile, List<JscpdAnnotator.Finding>>(
         val virtualFile = file.virtualFile ?: return null
         val server = JscpdServer.getInstance(file.project)
         val diagnostics = server.diagnosticsFor(virtualFile)
+        LOG.debug { "annotating ${virtualFile.path}: ${diagnostics.size} diagnostics" }
         if (diagnostics.isEmpty()) return emptyList()
         val uri = Uris.of(virtualFile)
         return diagnostics.map { Finding(it, server.codeActions(uri, it)) }
