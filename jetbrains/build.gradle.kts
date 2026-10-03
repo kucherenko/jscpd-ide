@@ -36,15 +36,29 @@ intellijPlatform {
         id = "dev.jscpd.ide"
         name = "jscpd"
         version = project.version.toString()
+        // The newest section of CHANGELOG.md, as HTML for the Marketplace page.
+        changeNotes = provider {
+            val lines = file("CHANGELOG.md").readLines()
+            val start = lines.indexOfFirst { it.startsWith("## ") }
+            val body = lines.drop(start + 1).takeWhile { !it.startsWith("## ") }
+            val items = body.filter { it.startsWith("- ") }.joinToString("") { "<li>${it.removePrefix("- ")}</li>" }
+            val intro = body.filter { it.isNotBlank() && !it.startsWith("- ") }.joinToString(" ")
+            "<p>$intro</p><ul>$items</ul>"
+        }
         ideaVersion {
             sinceBuild = "251"
             untilBuild = provider { null }
         }
     }
     pluginVerification {
+        // The IDE the plugin is built against; the Marketplace verifies against every compatible build after an upload.
         ides {
-            recommended()
+            current()
         }
+    }
+    publishing {
+        // ./gradlew publishPlugin with a Marketplace token; the first upload is done by hand.
+        token = providers.environmentVariable("JETBRAINS_PUBLISH_TOKEN")
     }
 }
 
