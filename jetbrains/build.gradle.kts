@@ -67,5 +67,8 @@ tasks {
         // Opens the lsp-demo fixture with loans.js and the tool window in view, the trust dialog answered.
         args = listOf(rootProject.file("../fixtures/lsp-demo").absolutePath)
         jvmArgs("-Didea.trust.all.projects=true", "-Djscpd.ide.demo=true")
+        // JSCPD_DEMO_TAB=Migration JSCPD_DEMO_COMPARE=true ./gradlew runIde shows the compare-demo pairs.
+        System.getenv("JSCPD_DEMO_TAB")?.let { jvmArgs("-Djscpd.ide.demo.tab=$it") }
+        if (System.getenv("JSCPD_DEMO_COMPARE") == "true") jvmArgs("-Djscpd.ide.demo.compare=true")
     }
 }
