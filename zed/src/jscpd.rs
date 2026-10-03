@@ -12,8 +12,8 @@ use zed_extension_api::{
     process::Command as Process,
     serde_json::Value,
     settings::LspSettings,
-    Architecture, DownloadedFileType, GithubRelease, GithubReleaseAsset, GithubReleaseOptions,
-    LanguageServerId, LanguageServerInstallationStatus, Os, Result,
+    Architecture, DownloadedFileType, LanguageServerId, LanguageServerInstallationStatus, Os,
+    Result,
 };
 
 const REPO: &str = "kucherenko/jscpd";
@@ -104,68 +104,58 @@ impl JscpdExtension {
         Ok(path)
     }
 
+    /// The latest release build, fetched through the `releases/latest/download`
+    /// links rather than the GitHub API, which is rate-limited for anonymous
+    /// callers. The version comes from the binary itself.
     fn download(&self, id: &LanguageServerId) -> Result<String> {
         zed::set_language_server_installation_status(
             id,
-            &LanguageServerInstallationStatus::CheckingForUpdate,
+            &LanguageServerInstallationStatus::Downloading,
         );
-        let release = zed::latest_github_release(
-            REPO,
-            GithubReleaseOptions { require_assets: true, pre_release: false },
-        )?;
         let (os, arch) = zed::current_platform();
         let platform = platform_id(os, arch)?;
         let asset_name = format!("jscpd-{platform}.tar.gz");
-        let asset = release
-            .assets
-            .iter()
-            .find(|a| a.name == asset_name)
-            .ok_or_else(|| format!("release {} has no {asset_name}", release.version))?;
         let exe = if os == Os::Windows { "jscpd.exe" } else { "jscpd" };
-        let dir = format!("jscpd-{}", release.version.trim_start_matches('v'));
-        let binary = format!("{dir}/{exe}");
-        if fs::metadata(&binary).is_err() {
-            zed::set_language_server_installation_status(
-                id,
-                &LanguageServerInstallationStatus::Downloading,
-            );
-            if let Err(error) = fetch_and_unpack(&release, asset, &asset_name, &dir, &binary, exe) {
-                let _ = fs::remove_dir_all(&dir);
+        let staging = format!("jscpd-download-{platform}");
+        let _ = fs::remove_dir_all(&staging);
+        let result = fetch_and_unpack(&asset_name, &staging, exe).and_then(|_| {
+            let staged = format!("{staging}/{exe}");
+            let (major, minor, patch) = version_of(&absolute(&staged))
+                .ok_or_else(|| format!("the downloaded {exe} does not answer --version"))?;
+            let dir = format!("jscpd-{major}.{minor}.{patch}");
+            let _ = fs::remove_dir_all(&dir);
+            fs::rename(&staging, &dir).map_err(|e| format!("cannot move {staging} to {dir}: {e}"))?;
+            remove_other_versions(&dir);
+            Ok(format!("{dir}/{exe}"))
+        });
+        match result {
+            Ok(binary) => {
+                zed::set_language_server_installation_status(id, &LanguageServerInstallationStatus::None);
+                Ok(absolute(&binary))
+            }
+            Err(error) => {
+                let _ = fs::remove_dir_all(&staging);
                 zed::set_language_server_installation_status(
                     id,
                     &LanguageServerInstallationStatus::Failed(error.clone()),
                 );
-                return Err(error);
+                Err(format!("{error}; install jscpd 5.4.0 or newer yourself and set lsp.jscpd.binary.path if this keeps failing"))
             }
-            remove_other_versions(&dir);
         }
-        zed::set_language_server_installation_status(id, &LanguageServerInstallationStatus::None);
-        Ok(absolute(&binary))
     }
 }
 
 /// Downloads the archive, checks its SHA-256 against `checksums.txt`, and
-/// writes the executable it holds.
-fn fetch_and_unpack(
-    release: &GithubRelease,
-    asset: &GithubReleaseAsset,
-    asset_name: &str,
-    dir: &str,
-    binary: &str,
-    exe: &str,
-) -> Result<()> {
+/// writes the executable it holds into `dir`.
+fn fetch_and_unpack(asset_name: &str, dir: &str, exe: &str) -> Result<()> {
+    let base = format!("https://github.com/{REPO}/releases/latest/download");
     fs::create_dir_all(dir).map_err(|e| format!("cannot create {dir}: {e}"))?;
     let archive = format!("{dir}/{asset_name}");
-    zed::download_file(&asset.download_url, &archive, DownloadedFileType::Uncompressed)
+    zed::download_file(&format!("{base}/{asset_name}"), &archive, DownloadedFileType::Uncompressed)
         .map_err(|e| format!("download of {asset_name} failed: {e}"))?;
     let bytes = fs::read(&archive).map_err(|e| format!("cannot read {archive}: {e}"))?;
 
-    let sums = release
-        .assets
-        .iter()
-        .find(|a| a.name == "checksums.txt")
-        .ok_or("the release has no checksums.txt")?;
-    let text = String::from_utf8_lossy(&fetch_bytes(&sums.download_url)?).into_owned();
+    let text = String::from_utf8_lossy(&fetch_bytes(&format!("{base}/checksums.txt"))?).into_owned();
     let expected = text
         .lines()
         .find_map(|line| {
@@ -185,8 +175,9 @@ fn fetch_and_unpack(
         .read_to_end(&mut tar)
         .map_err(|e| format!("{asset_name} is not a gzip archive: {e}"))?;
     let file = untar_file(&tar, exe).ok_or_else(|| format!("{asset_name} holds no {exe}"))?;
-    fs::write(binary, file).map_err(|e| format!("cannot write {binary}: {e}"))?;
-    zed::make_file_executable(binary)?;
+    let binary = format!("{dir}/{exe}");
+    fs::write(&binary, file).map_err(|e| format!("cannot write {binary}: {e}"))?;
+    zed::make_file_executable(&binary)?;
     let _ = fs::remove_file(&archive);
     Ok(())
 }

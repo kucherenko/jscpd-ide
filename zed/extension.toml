@@ -6,6 +6,19 @@ authors = ["Andrey Kucherenko <kucherenko.andrey@gmail.com>"]
 description = "Copy/paste detection while you type: exact, renamed, near-miss, similar and semantic clones, dead code and complexity from jscpd --lsp."
 repository = "https://github.com/kucherenko/jscpd-ide"
 
+# What the extension may run and fetch: `--version` on a candidate binary
+# (jscpd from the PATH or a download, and ldd to tell musl from glibc), and
+# the release assets of kucherenko/jscpd.
+[[capabilities]]
+kind = "process:exec"
+command = "*"
+args = ["--version"]
+
+[[capabilities]]
+kind = "download_file"
+host = "github.com"
+path = ["kucherenko", "jscpd", "releases", "**"]
+
 # jscpd reads every file of the worktree itself; this list only says which
 # buffers get its diagnostics. Languages that are not installed are skipped.
 [language_servers.jscpd]

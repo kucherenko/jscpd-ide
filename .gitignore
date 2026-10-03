@@ -12,3 +12,4 @@ build/
 *.iml
 .intellijPlatform/
 .kotlin/
+*.wasm
