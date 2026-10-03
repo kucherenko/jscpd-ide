@@ -12,6 +12,10 @@
   },
   "homepage": "https://jscpd.dev",
   "icon": "resources/icon.png",
+  "galleryBanner": {
+    "color": "#0f172a",
+    "theme": "dark"
+  },
   "bugs": {
     "url": "https://github.com/kucherenko/jscpd-ide/issues"
   },

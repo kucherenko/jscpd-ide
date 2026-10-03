@@ -3,10 +3,10 @@ name: vscode
 on:
   push:
     branches: [master]
-    paths: ['vscode/**', 'fixtures/**', '.github/workflows/vscode.yml']
     tags: ['vscode-v*']
   pull_request:
     paths: ['vscode/**', 'fixtures/**', '.github/workflows/vscode.yml']
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -53,12 +53,19 @@ jobs:
           cache: npm
           cache-dependency-path: vscode/package-lock.json
       - run: npm ci
+      - name: The tag must carry the version of package.json
+        if: startsWith(github.ref, 'refs/tags/vscode-v')
+        run: |
+          version=$(node -p "require('./package.json').version")
+          test "vscode-v$version" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} does not match package.json version $version"; exit 1; }
       - run: npm run package
       - uses: actions/upload-artifact@v4
         with:
           name: jscpd-vsix
           path: vscode/*.vsix
 
+  # A tag vscode-v<version> publishes the package the previous job built,
+  # to the Marketplace (VSCE_PAT) and to Open VSX (OVSX_PAT).
   publish:
     if: startsWith(github.ref, 'refs/tags/vscode-v')
     needs: package
@@ -71,11 +78,17 @@ jobs:
           cache: npm
           cache-dependency-path: vscode/package-lock.json
       - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: jscpd-vsix
+          path: vscode
       - name: Publish to the Marketplace
-        run: npx vsce publish --no-dependencies
+        run: npx vsce publish --packagePath ./*.vsix
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
       - name: Publish to Open VSX
-        run: npx ovsx publish --no-dependencies
+        run: |
+          npx ovsx create-namespace kucherenko --pat "$OVSX_PAT" || echo "namespace exists"
+          npx ovsx publish ./*.vsix --pat "$OVSX_PAT"
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
