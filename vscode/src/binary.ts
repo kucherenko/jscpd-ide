@@ -19,17 +19,37 @@ export type DownloadPolicy = 'ask' | 'always' | 'never';
 const REPO = 'kucherenko/jscpd';
 const EXE = process.platform === 'win32' ? 'jscpd.exe' : 'jscpd';
 
+/**
+ * How to spawn a command. A `.cmd` or `.bat` shim, which npm leaves on the
+ * PATH on Windows, only runs through the shell, so it is quoted and marked.
+ */
+export function spawnSpec(command: string): { command: string; shell: boolean } {
+  const shell = process.platform === 'win32' && /\.(cmd|bat)$/i.test(command);
+  return { command: shell ? `"${command}"` : command, shell };
+}
+
+/** An argument the way the shell takes it, when a shell is in the way. */
+export function shellArg(arg: string, shell: boolean): string {
+  return shell && /[\s"&|<>^()]/.test(arg) ? `"${arg.replace(/"/g, '\\"')}"` : arg;
+}
+
 /** `jscpd --version` prints `jscpd X.Y.Z`; anything else is not a jscpd we can use. */
 export function version(command: string): Promise<string | undefined> {
   return new Promise((resolve) => {
-    execFile(command, ['--version'], { timeout: 15000, windowsHide: true }, (error, stdout) => {
-      if (error) {
-        resolve(undefined);
-        return;
-      }
-      const m = /(\d+\.\d+\.\d+\S*)/.exec(String(stdout));
-      resolve(m ? m[1] : undefined);
-    });
+    const spec = spawnSpec(command);
+    try {
+      execFile(spec.command, ['--version'], { timeout: 15000, windowsHide: true, shell: spec.shell }, (error, stdout) => {
+        if (error) {
+          resolve(undefined);
+          return;
+        }
+        const m = /(\d+\.\d+\.\d+\S*)/.exec(String(stdout));
+        resolve(m ? m[1] : undefined);
+      });
+    } catch {
+      // spawn can throw at once, for example EINVAL for a shim it cannot run
+      resolve(undefined);
+    }
   });
 }
 

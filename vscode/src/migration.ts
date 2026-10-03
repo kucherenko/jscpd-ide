@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { execFile } from 'child_process';
+import { shellArg, spawnSpec } from './binary';
 import { CompareReport } from './model';
 import { Comparison } from './views';
 
@@ -184,8 +185,9 @@ export class Migration implements vscode.Disposable {
   }
 
   private exec(command: string, args: string[], cwd: string): Promise<void> {
+    const spec = spawnSpec(command);
     return new Promise((resolve, reject) => {
-      execFile(command, args, { cwd, maxBuffer: 64 * 1024 * 1024, windowsHide: true }, (error, stdout, stderr) => {
+      execFile(spec.command, args.map((a) => shellArg(a, spec.shell)), { cwd, maxBuffer: 64 * 1024 * 1024, windowsHide: true, shell: spec.shell }, (error, stdout, stderr) => {
         if (stdout) {
           this.log.append(String(stdout));
         }

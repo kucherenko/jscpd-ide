@@ -1,6 +1,7 @@
 // The language client around `jscpd --lsp`, and the settings it sends.
 import * as vscode from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions } from 'vscode-languageclient/node';
+import { shellArg, spawnSpec } from './binary';
 
 /**
  * The editor's settings as the server takes them: the keys of `.jscpd.json`,
@@ -64,9 +65,11 @@ export function createClient(
 ): LanguageClient {
   // No explicit transport: with TransportKind.stdio the client would add a
   // `--stdio` argument, which jscpd does not take. Plain stdio is the default.
+  const spec = spawnSpec(command);
   const serverOptions: ServerOptions = {
-    command,
-    args: ['--lsp', ...args],
+    command: spec.command,
+    args: ['--lsp', ...args].map((a) => shellArg(a, spec.shell)),
+    options: { shell: spec.shell },
   };
   const clientOptions: LanguageClientOptions = {
     documentSelector: [{ scheme: 'file' }],
