@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- Screenshots of the Clones, Dead code and Migration views in the README, which is also the extension's page on the Marketplace and Open VSX.
+- Install links for the VS Code Marketplace and Open VSX.
+
 ## 0.1.0
 
 First release.
