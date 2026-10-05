@@ -2,6 +2,8 @@
 
 Copy/paste detection while you type. The extension runs [jscpd](https://jscpd.dev) as a language server, so every clone, dead symbol or over-complex function shows up as a diagnostic in the file you are editing, with a gutter icon colored by kind, a code action that jumps to the other copy, and four views in the jscpd side bar.
 
+![loans.js with a hover on a copied function, the jscpd side bar and the Problems panel](images/clones.png)
+
 ## What you get
 
 - Clones as you edit. Exact copies, renamed copies (same code, other identifiers), near-miss copies, functions with the same syntax-tree shape, and, with the embedding model, functions that do the same job in different code. Each kind has its own color and gutter icon.
@@ -11,9 +13,17 @@ Copy/paste detection while you type. The extension runs [jscpd](https://jscpd.de
 - A status bar item with the duplication of the open projects.
 - Migration: pick the folder you port from and the folder you port to, and `jscpd --compare` pairs their functions. The view lists every paired function with its similarity, the functions that are still only on one side, and the ones that are ready to port. The HTML map opens next to your code and refreshes when you save a file in either folder.
 
+With dead code on, an export that no file imports fades out, and the hover gives the confidence of the finding:
+
+![formatFine in format.js, faded, with the hover of the unused export](images/dead-code.png)
+
+This is `fixtures/compare-demo` after `jscpd: Compare two folders`, with the Python module as the source and its TypeScript port as the target:
+
+![The migration map of compare-demo next to the Migration view](images/migration.png)
+
 ## Install
 
-1. Install the extension.
+1. Install jscpd from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=kucherenko.jscpd) or [Open VSX](https://open-vsx.org/extension/kucherenko/jscpd).
 2. The extension looks for `jscpd` in `PATH`. If it is not there it offers to download the release build for your platform from GitHub, checks it against the release's `checksums.txt`, and keeps it in the extension's storage. You can also point `jscpd.path` at a binary you installed yourself (`npm i -g jscpd`, `cargo install jscpd`, Homebrew, or the installer on [jscpd.dev](https://jscpd.dev)).
 
 jscpd 5.4.0 or newer is needed for the language server.
@@ -50,7 +60,7 @@ Each project keeps its own `.jscpd.json`; the server reads it, and the `lsp` sec
 
 ## Try it
 
-Open `fixtures/lsp-demo` from the [jscpd-ide](https://github.com/kucherenko/jscpd-ide) repository. `src/loans.js` holds one function copied into `holds.js`, one built like a function in `holds.js`, and one with 19 branches; the README of the fixture says which diagnostic each gets. `fixtures/compare-demo` has a TypeScript module and its Python port for the Migration view.
+Open `fixtures/lsp-demo` from the [jscpd-ide](https://github.com/kucherenko/jscpd-ide) repository. `src/loans.js` holds one function copied into `holds.js`, one built like a function in `holds.js`, and one with 19 branches; the README of the fixture says which diagnostic each gets. `fixtures/compare-demo` has a Python module and its TypeScript port for the Migration view. The screenshots above come from these two fixtures.
 
 ## Development
 

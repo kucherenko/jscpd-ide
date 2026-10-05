@@ -2,7 +2,7 @@
   "name": "jscpd",
   "displayName": "jscpd",
   "description": "Copy/paste detection in the editor: exact, renamed, near-miss, similar and semantic clones, dead code and complexity from jscpd --lsp, and a migration view for jscpd --compare.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "kucherenko",
   "license": "MIT",
   "repository": {
@@ -379,7 +379,7 @@
     "watch": "node esbuild.mjs --watch",
     "check": "tsc --noEmit",
     "test": "npm run build && tsc -p tsconfig.test.json && node ./out/test/runTest.js",
-    "package": "npm run check && npm run build && vsce package --no-dependencies",
+    "package": "npm run check && npm run build && vsce package --no-dependencies --baseContentUrl https://github.com/kucherenko/jscpd-ide/blob/HEAD/vscode --baseImagesUrl https://github.com/kucherenko/jscpd-ide/raw/HEAD/vscode",
     "vscode:prepublish": "npm run build -- --production"
   },
   "dependencies": {
