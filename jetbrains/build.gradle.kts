@@ -31,6 +31,14 @@ dependencies {
 
 kotlin {
     jvmToolchain(21)
+    compilerOptions {
+        // Without this the compiler adds bridge stubs to every class that
+        // implements a platform interface with default methods
+        // (ToolWindowFactory.getAnchor, manage, StatusBarWidget.getPresentation),
+        // and the Plugin Verifier counts the stubs as overrides of internal and
+        // deprecated API.
+        jvmDefault.set(org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode.NO_COMPATIBILITY)
+    }
 }
 
 intellijPlatform {
