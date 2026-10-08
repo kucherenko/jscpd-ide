@@ -187,7 +187,7 @@ class CompareRunner(private val project: Project) : Disposable {
             JscpdServer.getInstance(project).notify("No migration map yet", "Compare two folders first.", NotificationType.INFORMATION)
             return
         }
-        BrowserUtil.browse(html.toFile())
+        BrowserUtil.browse(html.toUri())
     }
 
     override fun dispose() {}

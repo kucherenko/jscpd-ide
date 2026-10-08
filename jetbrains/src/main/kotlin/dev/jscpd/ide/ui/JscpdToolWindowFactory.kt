@@ -1,12 +1,17 @@
 package dev.jscpd.ide.ui
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionGroup
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.ActionUiKind
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.ex.ActionUtil
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
-import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
@@ -28,7 +33,6 @@ import java.awt.event.MouseEvent
 import javax.swing.JComponent
 import javax.swing.JTree
 import javax.swing.KeyStroke
-import javax.swing.SwingConstants
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
@@ -111,9 +115,21 @@ abstract class TreePanel(protected val project: Project, val title: String, tool
 
     private fun open(loc: Loc, split: Boolean) {
         val file = Uris.fileOf(loc.path) ?: return
-        val manager = FileEditorManagerEx.getInstanceEx(project)
         if (split) {
-            manager.currentWindow?.split(SwingConstants.VERTICAL, true, file, true)
+            // The platform's own "Open in Right Split" action, fed the file the
+            // way the project view feeds it. Not EditorWindow.split(): its
+            // Kotlin default arguments compile to a split$default method that
+            // only exists from 2025.3, so 2025.1 and 2025.2 threw (Marketplace
+            // verifier); and not OpenInRightSplitAction directly, which is
+            // internal API.
+            ActionManager.getInstance().getAction("OpenInRightSplit")?.let { action ->
+                val context = SimpleDataContext.builder()
+                    .add(CommonDataKeys.PROJECT, project)
+                    .add(CommonDataKeys.VIRTUAL_FILE_ARRAY, arrayOf(file))
+                    .build()
+                val event = AnActionEvent.createEvent(action, context, null, ActionPlaces.TOOLWINDOW_CONTENT, ActionUiKind.NONE, null)
+                ActionUtil.performActionDumbAwareWithCallbacks(action, event)
+            }
         }
         val editor = FileEditorManager.getInstance(project).openTextEditor(OpenFileDescriptor(project, file, loc.startLine - 1, loc.column), true) ?: return
         val document = editor.document

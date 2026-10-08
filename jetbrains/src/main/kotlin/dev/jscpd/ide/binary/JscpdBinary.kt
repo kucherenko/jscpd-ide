@@ -1,12 +1,12 @@
 package dev.jscpd.ide.binary
 
 import com.intellij.execution.configurations.GeneralCommandLine
-import com.intellij.execution.configurations.PathEnvironmentVariableUtil
 import com.intellij.execution.process.CapturingProcessHandler
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.util.SystemInfo
+import com.intellij.util.EnvironmentUtil
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.system.CpuArch
 import java.io.ByteArrayInputStream
@@ -42,7 +42,7 @@ object JscpdBinary {
         }
         val names = if (SystemInfo.isWindows) listOf("jscpd.exe", "jscpd.cmd", "jscpd") else listOf("jscpd")
         for (name in names) {
-            val file = PathEnvironmentVariableUtil.findInPath(name) ?: continue
+            val file = findOnPath(name) ?: continue
             val v = versionOf(file.path) ?: continue
             if (atLeast(v, MIN_VERSION)) return Found(file.path, v, "path")
             LOG.info("jscpd $v at ${file.path} is older than 5.4.0, which added --lsp")
@@ -50,6 +50,15 @@ object JscpdBinary {
         val local = downloaded() ?: return null
         val v = versionOf(local.toString()) ?: return null
         return Found(local.toString(), v, "downloaded")
+    }
+
+    /** The first executable named `name` on the PATH the IDE sees (the shell's on macOS, see EnvironmentUtil). */
+    private fun findOnPath(name: String): File? {
+        val path = EnvironmentUtil.getValue("PATH") ?: System.getenv("PATH") ?: return null
+        return path.split(File.pathSeparatorChar)
+            .filter { it.isNotBlank() }
+            .map { File(it, name) }
+            .firstOrNull { it.isFile && it.canExecute() }
     }
 
     /** What `<command> --version` prints, as `X.Y.Z`. */

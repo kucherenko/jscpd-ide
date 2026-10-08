@@ -1,3 +1,5 @@
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "2.4.20"
@@ -5,7 +7,7 @@ plugins {
 }
 
 group = "dev.jscpd"
-version = "0.1.1"
+version = "0.1.2"
 
 repositories {
     mavenCentral()
@@ -51,8 +53,12 @@ intellijPlatform {
         }
     }
     pluginVerification {
-        // The IDE the plugin is built against; the Marketplace verifies against every compatible build after an upload.
+        // The oldest supported majors next to the build IDE: the Marketplace
+        // verifies against every compatible build after an upload, and 0.1.1
+        // passed here while failing there on 2025.1 and 2025.2.
         ides {
+            create(IntelliJPlatformType.IntellijIdeaCommunity, "2025.1")
+            create(IntelliJPlatformType.IntellijIdeaCommunity, "2025.2")
             current()
         }
     }

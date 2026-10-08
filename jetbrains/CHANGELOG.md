@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+
+- Runs on 2025.1 and 2025.2 again: opening the second copy of a clone beside the first used an editor API whose shape changed in 2025.3, so the Marketplace verifier marked the plugin incompatible with them.
+- No calls to platform APIs scheduled for removal in 2026.1: the PATH lookup for the binary and opening the migration map in the browser use plain ones.
+
 ## 0.1.1
 
 - Highlights and gutter icons show up: the annotator was registered under a language key the platform does not read, so 0.1.0 reported findings in the tool window only.
