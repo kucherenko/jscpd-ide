@@ -13,9 +13,11 @@ Copy/paste detection while you type, in IntelliJ IDEA, WebStorm, PyCharm, RustRo
 
 ## Install
 
-Until the plugin is on the Marketplace: build it (below) and install `build/distributions/jscpd-jetbrains-0.1.0.zip` through Settings | Plugins | ⚙ | Install Plugin from Disk.
+Settings | Plugins | Marketplace, search for jscpd, or open the [plugin page](https://plugins.jetbrains.com/plugin/34744-jscpd). The plugin works in IDEs from 2025.1 on, Community editions included.
 
 The plugin looks for `jscpd` 5.4.0 or newer in `PATH`. If it is missing, a notification offers to download the release build for your platform from GitHub into the IDE's system folder, checked against the release's `checksums.txt`. Settings | Tools | jscpd takes a path to a binary of your own.
+
+To try a build of your own, run `./gradlew buildPlugin` (see [Development](#development)) and install the zip from `build/distributions/` through Settings | Plugins | ⚙ | Install Plugin from Disk.
 
 ## Settings
 

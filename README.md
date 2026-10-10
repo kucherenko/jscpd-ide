@@ -4,9 +4,9 @@ Editor extensions for [jscpd](https://jscpd.dev), the copy/paste detector. Each 
 
 | Editor | Folder | State |
 |---|---|---|
-| VS Code (and Cursor, VSCodium, Windsurf) | [`vscode/`](vscode) | works, first release in progress |
+| VS Code (and Cursor, VSCodium, Windsurf) | [`vscode/`](vscode) | on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=kucherenko.jscpd) and [Open VSX](https://open-vsx.org/extension/kucherenko/jscpd) |
 | Zed | [`zed/`](zed) | works as a dev extension, registry submission pending |
-| JetBrains IDEs | [`jetbrains/`](jetbrains) | builds and runs from `./gradlew runIde`, Marketplace submission pending |
+| JetBrains IDEs | [`jetbrains/`](jetbrains) | on the [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/34744-jscpd), IDEs 2025.1 and newer |
 
 What each editor can show differs. VS Code gets the full set: four views, gutter icons per kind, a status bar item and the migration map. JetBrains IDEs get the same through the plugin's own LSP client: a tool window with the four tabs, gutter icons, intentions, a status bar item and the compare dialog, in Community editions too. Zed has no extension-made panels, so there the extension is the language server (diagnostics, hover, code actions) plus a task for `jscpd --compare`.
 
